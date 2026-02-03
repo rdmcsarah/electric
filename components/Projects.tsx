@@ -224,7 +224,7 @@ export default function Projects() {
             {/* ELECTRIC GRID SECTION WITH 3D EFFECT */}
             <div
                 ref={containerRef}
-                className="relative w-[80%] h-[70vh] mx-auto mt-20 rounded-lg overflow-hidden border border-white/20"
+                className="relative w-[80%] h-[80vh] mx-auto mt-20 rounded-lg overflow-hidden border border-white/20"
                 style={{
                     perspective: "1200px",
                     transformStyle: "preserve-3d",
@@ -256,19 +256,7 @@ export default function Projects() {
                             className="font-black leading-[0.9] tracking-tight text-[4rem] md:text-[7rem] lg:text-[9rem] xl:text-[12rem]"
                             style={{
                                 transform: "translateZ(60px)",
-                                textShadow: `
-            0 2px 0 #ccc,
-            0 4px 0 #c9c9c9,
-            0 6px 0 #bbb,
-            0 8px 0 #b9b9b9,
-            0 10px 0 #aaa,
-            0 12px 4px rgba(0,0,0,0.1),
-            0 0 8px rgba(0,0,0,0.1),
-            0 2px 6px rgba(0,0,0,0.2),
-            0 4px 8px rgba(0,0,0,0.15),
-            0 6px 12px rgba(0,0,0,0.2),
-            0 12px 12px rgba(0,0,0,0.15)
-          `,
+
                             }}
                         >
                             <span className="text-white relative">
