@@ -1189,19 +1189,21 @@ export default function InteractiveOldPC() {
     const glassMaterialRef = useRef<THREE.MeshPhysicalMaterial | null>(null);
     const isScrollingRef = useRef(false);
     const videoPlaybackRequestedRef = useRef(false);
+    const animationFrameId = useRef<number>(null);
+    const mouseMoveTimeout = useRef<NodeJS.Timeout>(null);
 
     // State for showing projects
     const [showProjects, setShowProjects] = useState(false);
     const projectsContainerRef = useRef<HTMLDivElement>(null);
 
-    // Create video element with better error handling
+    // Optimized video element creation
     const createVideoElement = useCallback(() => {
         const video = document.createElement("video");
         video.src = "/video.mp4";
         video.loop = false;
         video.muted = true;
         video.playsInline = true;
-        video.preload = "auto";
+        video.preload = "metadata"; // Changed from auto to metadata
         video.crossOrigin = "anonymous";
 
         video.onerror = () => {
@@ -1276,39 +1278,27 @@ export default function InteractiveOldPC() {
         );
         camera.position.set(0, 0.3, 3.2);
 
-        /* -------------------- Renderer with Enhanced Colors -------------------- */
+        /* -------------------- Optimized Renderer -------------------- */
         const renderer = new THREE.WebGLRenderer({
-            antialias: true,
+            antialias: false, // Disabled for performance
             alpha: true,
-            powerPreference: "high-performance"
+            powerPreference: "high-performance",
+            precision: "mediump" // Lower precision for better performance
         });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.5));
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // Reduced from 2.5
+        renderer.shadowMap.enabled = false; // Disabled shadows for performance
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 1.4;
         container.appendChild(renderer.domElement);
 
-        /* -------------------- Enhanced Bright Lighting System -------------------- */
+        /* -------------------- Optimized Lighting -------------------- */
         const ambientLight = new THREE.AmbientLight(0x6080FF, 0.3);
-        ambientLight.color.setHSL(0.66, 0.6, 0.5);
         scene.add(ambientLight);
 
         const mainLight = new THREE.DirectionalLight(0xFFFFFF, 2.2);
         mainLight.position.set(4, 6, 3);
-        mainLight.castShadow = true;
-        mainLight.shadow.mapSize.width = 4096;
-        mainLight.shadow.mapSize.height = 4096;
-        mainLight.shadow.camera.near = 0.1;
-        mainLight.shadow.camera.far = 50;
-        mainLight.shadow.camera.left = -15;
-        mainLight.shadow.camera.right = 15;
-        mainLight.shadow.camera.top = 15;
-        mainLight.shadow.camera.bottom = -15;
-        mainLight.shadow.bias = -0.0005;
-        mainLight.shadow.radius = 2;
         scene.add(mainLight);
 
         const fillLight = new THREE.DirectionalLight(0x66AAFF, 1.2);
@@ -1331,14 +1321,15 @@ export default function InteractiveOldPC() {
         const monitorHeight = 0.58;
         const monitorDepth = 0.42;
 
-        const monitorGeometry = new RoundedBoxGeometry(monitorWidth, monitorHeight, monitorDepth, 24, 0.02);
+        // Reduced geometry detail
+        const monitorGeometry = new RoundedBoxGeometry(monitorWidth, monitorHeight, monitorDepth, 8, 0.02); // Reduced from 24
         const monitorMaterial = new THREE.MeshPhysicalMaterial({
             color: 0x202020,
             metalness: 0.8,
             roughness: 0.12,
             clearcoat: 1.0,
             clearcoatRoughness: 0.08,
-            anisotropy: 1.0,
+            anisotropy: 0.5, // Reduced from 1.0
             transmission: 0.08,
             thickness: 0.5,
             specularIntensity: 2.5,
@@ -1348,17 +1339,15 @@ export default function InteractiveOldPC() {
         });
         const monitorMesh = new THREE.Mesh(monitorGeometry, monitorMaterial);
         monitorMesh.position.y = 0;
-        monitorMesh.castShadow = true;
-        monitorMesh.receiveShadow = true;
         scene.add(monitorMesh);
 
-        /* -------------------- Enhanced Nano-Edge Bezel -------------------- */
+        /* -------------------- Optimized Nano-Edge Bezel -------------------- */
         const bezelThickness = 0.012;
         const bezelGeometry = new RoundedBoxGeometry(
             monitorWidth - 0.02,
             monitorHeight - 0.1,
             bezelThickness,
-            16,
+            8, // Reduced from 16
             0.006
         );
 
@@ -1370,7 +1359,7 @@ export default function InteractiveOldPC() {
             clearcoatRoughness: 0.03,
             emissive: 0x404040,
             emissiveIntensity: 0,
-            anisotropy: 0.9,
+            anisotropy: 0.5, // Reduced from 0.9
             specularIntensity: 3.5,
             side: THREE.DoubleSide
         });
@@ -1382,7 +1371,7 @@ export default function InteractiveOldPC() {
             (monitorWidth - 0.04) / 2,
             0.002,
             8,
-            64,
+            32, // Reduced from 64
             Math.PI * 2
         );
         const bezelAccentMaterial = new THREE.MeshPhysicalMaterial({
@@ -1398,12 +1387,12 @@ export default function InteractiveOldPC() {
         bezelAccent.rotation.x = Math.PI / 2;
         bezel.add(bezelAccent);
 
-        /* -------------------- Enhanced Nanoglass Screen Protection -------------------- */
+        /* -------------------- Optimized Glass Screen -------------------- */
         const glassGeometry = new THREE.PlaneGeometry(
             monitorWidth - 0.06,
             monitorHeight - 0.14,
-            128,
-            128
+            32, // Reduced from 128
+            32  // Reduced from 128
         );
 
         const glassMaterial = new THREE.MeshPhysicalMaterial({
@@ -1428,11 +1417,12 @@ export default function InteractiveOldPC() {
         glassScreen.position.z = monitorDepth / 2 + 0.02;
         monitorMesh.add(glassScreen);
 
-        /* -------------------- Enhanced Quantum Dot Display -------------------- */
+        /* -------------------- Optimized Display -------------------- */
         const screenWidth = monitorWidth - 0.1;
         const screenHeight = monitorHeight - 0.18;
 
-        const screenSegments = 256;
+        // Reduced geometry detail significantly
+        const screenSegments = 64; // Reduced from 256
         const screenGeometry = new THREE.PlaneGeometry(screenWidth, screenHeight, screenSegments, screenSegments);
 
         const curvature = 0.15;
@@ -1455,61 +1445,55 @@ export default function InteractiveOldPC() {
         videoTexture.colorSpace = THREE.SRGBColorSpace;
         videoTexture.minFilter = THREE.LinearFilter;
         videoTexture.magFilter = THREE.LinearFilter;
-        videoTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        videoTexture.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 4); // Limited anisotropy
 
-        // Enhanced scanline effect
+        // Optimized scanline effect - smaller canvas
         const scanlineCanvas = document.createElement('canvas');
-        scanlineCanvas.width = 4096;
-        scanlineCanvas.height = 4096;
+        scanlineCanvas.width = 512; // Reduced from 4096
+        scanlineCanvas.height = 512; // Reduced from 4096
         const ctx = scanlineCanvas.getContext('2d')!;
 
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, scanlineCanvas.width, scanlineCanvas.height);
 
-        for (let y = 0; y < scanlineCanvas.height; y += 2) {
-            const alpha = 0.15 + Math.sin(y * 0.01) * 0.04;
+        for (let y = 0; y < scanlineCanvas.height; y += 4) { // Reduced frequency
+            const alpha = 0.15;
             ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
             ctx.fillRect(0, y, scanlineCanvas.width, 1);
-        }
-
-        for (let x = 0; x < scanlineCanvas.width; x += 3) {
-            const alpha = 0.08 + Math.cos(x * 0.005) * 0.03;
-            ctx.fillStyle = `rgba(220, 240, 255, ${alpha})`;
-            ctx.fillRect(x, 0, 1, scanlineCanvas.height);
         }
 
         const scanlineTexture = new THREE.CanvasTexture(scanlineCanvas);
         scanlineTexture.wrapS = THREE.RepeatWrapping;
         scanlineTexture.wrapT = THREE.RepeatWrapping;
 
-        // Enhanced quantum texture
+        // Optimized quantum texture - smaller canvas
         const quantumCanvas = document.createElement('canvas');
-        quantumCanvas.width = 1024;
-        quantumCanvas.height = 1024;
+        quantumCanvas.width = 256; // Reduced from 1024
+        quantumCanvas.height = 256; // Reduced from 1024
         const quantumCtx = quantumCanvas.getContext('2d')!;
 
-        const gradient = quantumCtx.createRadialGradient(512, 512, 0, 512, 512, 512);
+        const gradient = quantumCtx.createRadialGradient(128, 128, 0, 128, 128, 128);
         gradient.addColorStop(0, 'rgba(120, 180, 255, 0.3)');
         gradient.addColorStop(0.3, 'rgba(100, 150, 240, 0.2)');
         gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
         quantumCtx.fillStyle = gradient;
-        quantumCtx.fillRect(0, 0, 1024, 1024);
+        quantumCtx.fillRect(0, 0, 256, 256);
 
-        for (let i = 0; i < 7000; i++) {
-            const x = Math.random() * 1024;
-            const y = Math.random() * 1024;
-            const size = Math.random() * 2 + 0.5;
+        for (let i = 0; i < 500; i++) { // Reduced from 7000
+            const x = Math.random() * 256;
+            const y = Math.random() * 256;
+            const size = Math.random() * 1.5 + 0.5;
             const hue = 200 + Math.random() * 60;
             quantumCtx.beginPath();
             quantumCtx.arc(x, y, size, 0, Math.PI * 2);
-            quantumCtx.fillStyle = `hsla(${hue}, 90%, 80%, ${Math.random() * 0.25})`;
+            quantumCtx.fillStyle = `hsla(${hue}, 90%, 80%, ${Math.random() * 0.15})`; // Reduced opacity
             quantumCtx.fill();
         }
 
         const quantumTexture = new THREE.CanvasTexture(quantumCanvas);
 
-        // Enhanced shader material
+        // Optimized shader material - simplified shaders
         const screenMaterial = new THREE.ShaderMaterial({
             uniforms: {
                 videoTexture: { value: videoTexture },
@@ -1525,26 +1509,19 @@ export default function InteractiveOldPC() {
             },
             vertexShader: `
                 varying vec2 vUv;
-                varying vec3 vNormal;
-                varying vec3 vWorldPosition;
-                varying float vScreenDepth;
+                varying float vDist;
                 uniform float curvature;
                 uniform vec2 screenSize;
                 
                 void main() {
                     vUv = uv;
-                    vNormal = normalize(normalMatrix * normal);
-                    
-                    vec4 worldPosition = modelMatrix * vec4(position, 1.0);
-                    vWorldPosition = worldPosition.xyz;
                     
                     vec2 centeredUV = uv * 2.0 - 1.0;
-                    float dist = length(centeredUV);
-                    float bulge = curvature * pow(dist, 2.5);
+                    vDist = length(centeredUV);
+                    float bulge = curvature * pow(vDist, 2.5);
                     
                     vec3 pos = position;
                     pos.z -= bulge * 0.8;
-                    vScreenDepth = pos.z;
                     
                     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
                 }
@@ -1559,64 +1536,35 @@ export default function InteractiveOldPC() {
                 uniform float bloomThreshold;
                 uniform float saturation;
                 varying vec2 vUv;
-                varying vec3 vNormal;
-                varying vec3 vWorldPosition;
-                varying float vScreenDepth;
-                
-                vec3 adjustSaturation(vec3 color, float saturation) {
-                    float luminance = dot(color, vec3(0.2126, 0.7152, 0.0722));
-                    return mix(vec3(luminance), color, saturation);
-                }
+                varying float vDist;
                 
                 void main() {
                     vec2 uv = vUv;
                     
-                    // Enhanced chromatic aberration
-                    float r = texture2D(videoTexture, uv + vec2(chromaticAberration * 1.5, 0.0)).r;
+                    // Simplified chromatic aberration
+                    float r = texture2D(videoTexture, uv + vec2(chromaticAberration, 0.0)).r;
                     float g = texture2D(videoTexture, uv).g;
-                    float b = texture2D(videoTexture, uv - vec2(chromaticAberration * 1.5, 0.0)).b;
+                    float b = texture2D(videoTexture, uv - vec2(chromaticAberration, 0.0)).b;
                     
                     vec4 videoColor = vec4(r, g, b, 1.0);
-                    videoColor.rgb = adjustSaturation(videoColor.rgb, saturation);
                     
-                    float luminance = dot(videoColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+                    // Simplified quantum effect
+                    vec3 quantumColor = videoColor.rgb * 1.3;
                     
-                    // Brighter quantum colors
-                    vec3 quantumColor = vec3(
-                        luminance * 1.4,
-                        luminance * 1.3,
-                        luminance * 1.2
-                    );
-                    
-                    vec2 scanlineUV = uv * vec2(1.0, 3.0);
-                    scanlineUV.y += time * 0.5;
+                    vec2 scanlineUV = uv * vec2(1.0, 2.0); // Reduced from 3.0
+                    scanlineUV.y += time * 0.3; // Slower animation
                     vec4 scanline = texture2D(scanlineTexture, scanlineUV);
                     
-                    vec4 quantum = texture2D(quantumTexture, uv * 2.0 + sin(time * 0.2) * 0.1);
+                    vec4 quantum = texture2D(quantumTexture, uv * 1.5 + sin(time * 0.1) * 0.05); // Reduced animation
                     
-                    vec2 centeredUV = uv * 2.0 - 1.0;
-                    float dist = length(centeredUV);
-                    float vignette = 1.0 - smoothstep(0.2, 1.4, pow(dist, 1.5));
+                    float vignette = 1.0 - smoothstep(0.2, 1.4, pow(vDist, 1.5));
                     vignette = vignette * 0.9 + 0.1;
                     
-                    vec3 normal = normalize(vNormal);
-                    float fresnel = pow(1.0 - abs(dot(normal, vec3(0.0, 0.0, 1.0))), 2.5);
-                    
                     vec3 finalColor = quantumColor * vignette;
-                    finalColor *= (0.95 + 0.15 * scanline.r);
-                    finalColor += quantum.rgb * 0.4;
+                    finalColor *= (0.95 + 0.1 * scanline.r); // Reduced scanline effect
+                    finalColor += quantum.rgb * 0.2; // Reduced quantum effect
                     
-                    finalColor += finalColor * emissiveIntensity * (1.2 + fresnel * 0.7);
-                    
-                    float bloom = smoothstep(bloomThreshold, 1.0, luminance);
-                    finalColor += finalColor * bloom * 0.4;
-                    
-                    float scanlinePulse = sin(time * 3.0 + vWorldPosition.y * 10.0) * 0.03;
-                    finalColor += vec3(0.15, 0.3, 0.5) * scanlinePulse;
-                    
-                    // Add subtle color shifting
-                    finalColor.r += sin(time * 0.5) * 0.05;
-                    finalColor.g += cos(time * 0.3) * 0.05;
+                    finalColor += finalColor * emissiveIntensity;
                     
                     gl_FragColor = vec4(finalColor, 1.0);
                 }
@@ -1630,23 +1578,22 @@ export default function InteractiveOldPC() {
         screen.position.z = monitorDepth / 2 + 0.018;
         monitorMesh.add(screen);
 
-        /* -------------------- Enhanced Carbon Fiber Stand -------------------- */
-        const baseGeometry = new THREE.CylinderGeometry(0.18, 0.24, 0.065, 64);
+        /* -------------------- Optimized Carbon Fiber Stand -------------------- */
+        const baseGeometry = new THREE.CylinderGeometry(0.18, 0.24, 0.065, 32); // Reduced from 64
         const baseMaterial = new THREE.MeshPhysicalMaterial({
             color: 0x101010,
             metalness: 0.92,
             roughness: 0.08,
             clearcoat: 1.0,
             clearcoatRoughness: 0.08,
-            anisotropy: 1.0,
+            anisotropy: 0.5,
             side: THREE.DoubleSide
         });
         const base = new THREE.Mesh(baseGeometry, baseMaterial);
         base.position.y = -monitorHeight / 2 - 0.125;
-        base.castShadow = true;
         monitorMesh.add(base);
 
-        const standConnectorGeometry = new THREE.CylinderGeometry(0.055, 0.075, 0.16, 32);
+        const standConnectorGeometry = new THREE.CylinderGeometry(0.055, 0.075, 0.16, 16); // Reduced from 32
         const standConnectorMaterial = new THREE.MeshPhysicalMaterial({
             color: 0x303030,
             metalness: 0.97,
@@ -1656,10 +1603,9 @@ export default function InteractiveOldPC() {
         });
         const standConnector = new THREE.Mesh(standConnectorGeometry, standConnectorMaterial);
         standConnector.position.y = -monitorHeight / 2 - 0.065;
-        standConnector.castShadow = true;
         monitorMesh.add(standConnector);
 
-        const tiltRingGeometry = new THREE.TorusGeometry(0.07, 0.008, 16, 48);
+        const tiltRingGeometry = new THREE.TorusGeometry(0.07, 0.008, 16, 24); // Reduced from 48
         const tiltRingMaterial = new THREE.MeshPhysicalMaterial({
             color: 0x808080,
             metalness: 0.99,
@@ -1671,18 +1617,9 @@ export default function InteractiveOldPC() {
         const tiltRing = new THREE.Mesh(tiltRingGeometry, tiltRingMaterial);
         tiltRing.position.y = -monitorHeight / 2 - 0.025;
         tiltRing.rotation.x = Math.PI / 2;
-        tiltRing.castShadow = true;
         monitorMesh.add(tiltRing);
 
-        /* -------------------- Holographic Controls -------------------- */
-        const controlBaseMaterial = new THREE.MeshPhysicalMaterial({
-            color: 0x252525,
-            metalness: 0.97,
-            roughness: 0.08,
-            clearcoat: 1.0,
-            side: THREE.DoubleSide
-        });
-
+        /* -------------------- Optimized Holographic Controls -------------------- */
         const holographicMaterial = new THREE.MeshPhysicalMaterial({
             color: 0xB0D8FF,
             metalness: 1.0,
@@ -1694,20 +1631,14 @@ export default function InteractiveOldPC() {
             side: THREE.DoubleSide
         });
 
-        const powerButtonGeometry = new THREE.CylinderGeometry(0.014, 0.014, 0.01, 32);
+        // Reduced number of control elements
+        const powerButtonGeometry = new THREE.CylinderGeometry(0.014, 0.014, 0.01, 16); // Reduced from 32
         const powerButton = new THREE.Mesh(powerButtonGeometry, holographicMaterial);
         powerButton.position.set(-monitorWidth / 2 + 0.085, -monitorHeight / 2 + 0.17, monitorDepth / 2 + 0.012);
         powerButton.rotation.x = Math.PI / 2;
         monitorMesh.add(powerButton);
 
-        const powerRingGeometry = new THREE.RingGeometry(0.016, 0.022, 32);
-        const powerRing = new THREE.Mesh(powerRingGeometry, holographicMaterial);
-        powerRing.position.copy(powerButton.position);
-        powerRing.position.z += 0.001;
-        powerRing.rotation.x = -Math.PI / 2;
-        monitorMesh.add(powerRing);
-
-        const ledCoreGeometry = new THREE.SphereGeometry(0.008, 32, 32);
+        const ledCoreGeometry = new THREE.SphereGeometry(0.008, 16, 16); // Reduced from 32
         const ledCoreMaterial = new THREE.MeshBasicMaterial({
             color: 0x00FFAA,
             transparent: true,
@@ -1717,33 +1648,12 @@ export default function InteractiveOldPC() {
         ledCore.position.set(-monitorWidth / 2 + 0.085, -monitorHeight / 2 + 0.195, monitorDepth / 2 + 0.011);
         monitorMesh.add(ledCore);
 
-        const ledHaloGeometry = new THREE.SphereGeometry(0.018, 48, 48);
-        const ledHaloMaterial = new THREE.ShaderMaterial({
-            uniforms: {
-                time: { value: 0 },
-                color: { value: new THREE.Color(0x00FFAA) },
-                intensity: { value: 1.5 }
-            },
-            vertexShader: `
-                varying vec3 vNormal;
-                void main() {
-                    vNormal = normalize(normalMatrix * normal);
-                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                }
-            `,
-            fragmentShader: `
-                uniform float time;
-                uniform vec3 color;
-                uniform float intensity;
-                varying vec3 vNormal;
-                
-                void main() {
-                    float intensity = pow(0.7 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.5);
-                    float pulse = sin(time * 3.0) * 0.4 + 0.8;
-                    gl_FragColor = vec4(color, intensity * pulse * 0.5);
-                }
-            `,
+        // Removed complex LED halo shader for performance
+        const ledHaloGeometry = new THREE.SphereGeometry(0.018, 24, 24); // Reduced from 48
+        const ledHaloMaterial = new THREE.MeshBasicMaterial({
+            color: 0x00FFAA,
             transparent: true,
+            opacity: 0.3,
             side: THREE.BackSide,
             blending: THREE.AdditiveBlending
         });
@@ -1751,93 +1661,7 @@ export default function InteractiveOldPC() {
         ledHalo.position.copy(ledCore.position);
         monitorMesh.add(ledHalo);
 
-        const knobBaseGeometry = new THREE.CylinderGeometry(0.012, 0.012, 0.014, 32);
-        const knobBase = new THREE.Mesh(knobBaseGeometry, holographicMaterial);
-        knobBase.position.set(monitorWidth / 2 - 0.105, -monitorHeight / 2 + 0.17, monitorDepth / 2 + 0.012);
-        knobBase.rotation.x = Math.PI / 2;
-        monitorMesh.add(knobBase);
-
-        const knobRingGeometry = new THREE.TorusGeometry(0.013, 0.002, 8, 32);
-        const knobRing = new THREE.Mesh(knobRingGeometry, controlBaseMaterial);
-        knobRing.position.copy(knobBase.position);
-        knobRing.rotation.x = Math.PI / 2;
-        monitorMesh.add(knobRing);
-
-        const brightnessKnob = knobBase.clone();
-        brightnessKnob.position.x = monitorWidth / 2 - 0.065;
-        monitorMesh.add(brightnessKnob);
-
-        const brightnessRing = knobRing.clone();
-        brightnessRing.position.x = monitorWidth / 2 - 0.065;
-        monitorMesh.add(brightnessRing);
-
-        const controlPanelGeometry = new RoundedBoxGeometry(0.21, 0.035, 0.006, 8, 0.005);
-        const controlPanelMaterial = new THREE.MeshPhysicalMaterial({
-            color: 0x181818,
-            metalness: 0.99,
-            roughness: 0.04,
-            clearcoat: 1.0,
-            side: THREE.DoubleSide
-        });
-        const controlPanel = new THREE.Mesh(controlPanelGeometry, controlPanelMaterial);
-        controlPanel.position.set(monitorWidth / 2 - 0.21, -monitorHeight / 2 + 0.085, monitorDepth / 2 + 0.011);
-        monitorMesh.add(controlPanel);
-
-        const touchButtonGeometry = new THREE.CylinderGeometry(0.009, 0.009, 0.008, 24);
-        const buttonSpacing = 0.038;
-
-        for (let i = 0; i < 4; i++) {
-            const button = new THREE.Mesh(touchButtonGeometry, holographicMaterial);
-            button.rotation.x = Math.PI / 2;
-            button.position.set(
-                monitorWidth / 2 - 0.16 + (i * buttonSpacing),
-                -monitorHeight / 2 + 0.085,
-                monitorDepth / 2 + 0.015
-            );
-            monitorMesh.add(button);
-
-            const hologramGeometry = new THREE.PlaneGeometry(0.015, 0.015);
-            const hologramMaterial = new THREE.MeshBasicMaterial({
-                color: 0x66AAFF,
-                transparent: true,
-                opacity: 0.3,
-                side: THREE.DoubleSide
-            });
-            const hologram = new THREE.Mesh(hologramGeometry, hologramMaterial);
-            hologram.position.copy(button.position);
-            hologram.position.z += 0.008;
-            hologram.rotation.x = -Math.PI / 2;
-            monitorMesh.add(hologram);
-        }
-
-        /* -------------------- Premium Branding -------------------- */
-        const logoGeometry = new RoundedBoxGeometry(0.15, 0.028, 0.005, 8, 0.006);
-        const logoMaterial = new THREE.MeshPhysicalMaterial({
-            color: 0x000000,
-            metalness: 0.99,
-            roughness: 0.04,
-            emissive: 0x404040,
-            emissiveIntensity: 0.5,
-            clearcoat: 1.0,
-            side: THREE.DoubleSide
-        });
-        const logo = new THREE.Mesh(logoGeometry, logoMaterial);
-        logo.position.set(0, -monitorHeight / 2 + 0.048, monitorDepth / 2 + 0.011);
-        monitorMesh.add(logo);
-
-        const modelBadgeGeometry = new THREE.PlaneGeometry(0.09, 0.012);
-        const modelBadgeMaterial = new THREE.MeshBasicMaterial({
-            color: 0xA0A0A0,
-            transparent: true,
-            opacity: 0.9,
-            side: THREE.DoubleSide
-        });
-        const modelBadge = new THREE.Mesh(modelBadgeGeometry, modelBadgeMaterial);
-        modelBadge.position.set(0, -monitorHeight / 2 + 0.022, monitorDepth / 2 + 0.011);
-        modelBadge.rotation.x = -Math.PI / 2;
-        monitorMesh.add(modelBadge);
-
-        /* -------------------- Enhanced Quantum Holographic Glow -------------------- */
+        /* -------------------- Optimized Quantum Holographic Glow -------------------- */
         const screenAuraGeometry = new THREE.PlaneGeometry(screenWidth + 0.05, screenHeight + 0.05, 1, 1);
         const screenAuraMaterial = new THREE.ShaderMaterial({
             uniforms: {
@@ -1846,10 +1670,8 @@ export default function InteractiveOldPC() {
             },
             vertexShader: `
                 varying vec2 vUv;
-                varying vec3 vPosition;
                 void main() {
                     vUv = uv;
-                    vPosition = position;
                     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
                 }
             `,
@@ -1857,7 +1679,6 @@ export default function InteractiveOldPC() {
                 uniform float time;
                 uniform float intensity;
                 varying vec2 vUv;
-                varying vec3 vPosition;
                 
                 void main() {
                     vec2 centeredUV = vUv * 2.0 - 1.0;
@@ -1865,16 +1686,9 @@ export default function InteractiveOldPC() {
                     
                     float alpha = (1.0 - smoothstep(0.0, 1.0, dist)) * intensity;
                     
-                    float pulse = sin(time * 1.5) * 0.3 + 0.9;
-                    float scan = sin(vPosition.y * 40.0 + time * 6.0) * 0.15 + 0.95;
+                    float pulse = sin(time * 1.0) * 0.2 + 0.8; // Slower pulse
                     
-                    vec3 auraColor = vec3(
-                        0.5 + sin(time + dist * 5.0) * 0.3,
-                        0.7 + cos(time * 0.7 + dist * 3.0) * 0.3,
-                        1.0
-                    );
-                    
-                    gl_FragColor = vec4(auraColor, alpha * pulse * scan * 0.5);
+                    gl_FragColor = vec4(0.5, 0.7, 1.0, alpha * pulse * 0.3); // Simplified color
                 }
             `,
             transparent: true,
@@ -1886,177 +1700,67 @@ export default function InteractiveOldPC() {
         screenAura.position.z = monitorDepth / 2 + 0.017;
         monitorMesh.add(screenAura);
 
-        /* -------------------- Enhanced Keyboard -------------------- */
+        /* -------------------- Simplified Keyboard -------------------- */
         const keyboardWidth = 0.52;
         const keyboardHeight = 0.022;
         const keyboardDepth = 0.21;
 
-        const keyboardGeometry = new RoundedBoxGeometry(keyboardWidth, keyboardHeight, keyboardDepth, 8, 0.008);
-        const keyboardMaterial = new THREE.MeshPhysicalMaterial({
-            color: 0x282828,
-            metalness: 0.85,
-            roughness: 0.18,
-            clearcoat: 0.6,
-            side: THREE.DoubleSide
+        const keyboardGeometry = new RoundedBoxGeometry(keyboardWidth, keyboardHeight, keyboardDepth, 4, 0.008); // Reduced from 8
+        const keyboardMaterial = new THREE.MeshBasicMaterial({ // Changed to BasicMaterial
+            color: 0x282828
         });
         const keyboard = new THREE.Mesh(keyboardGeometry, keyboardMaterial);
         keyboard.position.set(0, -0.62, 0.32);
         keyboard.rotation.x = -0.12;
-        keyboard.castShadow = true;
-        keyboard.receiveShadow = true;
         scene.add(keyboard);
 
-        const keyRows = 4;
-        const keysPerRow = 12;
-        const keyWidth = 0.032;
-        const keyHeight = 0.012;
-        const keyDepth = 0.008;
-        const keySpacing = 0.036;
-        const rowSpacing = 0.026;
+        // Removed individual keys for performance
 
-        const keyGeometry = new THREE.BoxGeometry(keyWidth, keyHeight, keyDepth);
-        const keyMaterial = new THREE.MeshPhysicalMaterial({
-            color: 0x303030,
-            metalness: 0.8,
-            roughness: 0.25,
-            clearcoat: 0.4,
-            side: THREE.DoubleSide
-        });
-
-        for (let row = 0; row < keyRows; row++) {
-            for (let col = 0; col < keysPerRow; col++) {
-                const key = new THREE.Mesh(keyGeometry, keyMaterial);
-                key.position.set(
-                    (col - keysPerRow / 2 + 0.5) * keySpacing,
-                    keyboard.position.y + keyboardHeight / 2 + keyHeight / 2 + 0.001,
-                    keyboard.position.z + (row - keyRows / 2 + 0.5) * rowSpacing
-                );
-                key.rotation.x = keyboard.rotation.x;
-                key.castShadow = true;
-                scene.add(key);
-            }
-        }
-
-        const spacebarGeometry = new RoundedBoxGeometry(0.16, 0.01, 0.022, 4, 0.003);
-        const spacebar = new THREE.Mesh(spacebarGeometry, keyMaterial);
-        spacebar.position.set(0, keyboard.position.y + keyboardHeight / 2 + 0.01 / 2 + 0.001, keyboard.position.z + 0.082);
-        spacebar.rotation.x = keyboard.rotation.x;
-        spacebar.castShadow = true;
-        scene.add(spacebar);
-
-        /* -------------------- Enhanced Ergonomic Mouse -------------------- */
-        const mouseGeometry = new THREE.SphereGeometry(0.028, 32, 32);
+        /* -------------------- Simplified Mouse -------------------- */
+        const mouseGeometry = new THREE.SphereGeometry(0.028, 16, 16); // Reduced from 32
         mouseGeometry.scale(1.6, 0.65, 1);
-        const mouseMaterial = new THREE.MeshPhysicalMaterial({
-            color: 0x282828,
-            metalness: 0.8,
-            roughness: 0.22,
-            clearcoat: 0.6,
-            side: THREE.DoubleSide
+        const mouseMaterial = new THREE.MeshBasicMaterial({ // Changed to BasicMaterial
+            color: 0x282828
         });
         const mouse = new THREE.Mesh(mouseGeometry, mouseMaterial);
         mouse.position.set(0.32, -0.6, 0.17);
-        mouse.castShadow = true;
         scene.add(mouse);
 
-        const cableCurve = new THREE.CatmullRomCurve3([
-            new THREE.Vector3(0.32, -0.6, 0.17),
-            new THREE.Vector3(0.22, -0.72, 0.12),
-            new THREE.Vector3(0.12, -0.82, -0.08),
-            new THREE.Vector3(0.02, -0.92, -0.28),
-        ]);
+        // Removed cable for performance
 
-        const cableGeometry = new THREE.TubeGeometry(cableCurve, 32, 0.006, 16, false);
-        const cableMaterial = new THREE.MeshPhysicalMaterial({
-            color: 0x202020,
-            metalness: 0.4,
-            roughness: 0.6,
-            side: THREE.DoubleSide
-        });
-        const cable = new THREE.Mesh(cableGeometry, cableMaterial);
-        scene.add(cable);
-
-        /* -------------------- Brighter Carbon Fiber Desk -------------------- */
+        /* -------------------- Simplified Desk -------------------- */
         const deskWidth = 4.2;
         const deskDepth = 2.2;
         const deskThickness = 0.06;
 
         const deskGeometry = new THREE.BoxGeometry(deskWidth, deskThickness, deskDepth);
-        const deskMaterial = new THREE.MeshPhysicalMaterial({
-            color: 0x383838,
-            metalness: 0.5,
-            roughness: 0.5,
-            side: THREE.DoubleSide
+        const deskMaterial = new THREE.MeshBasicMaterial({ // Changed to BasicMaterial
+            color: 0x383838
         });
         const desk = new THREE.Mesh(deskGeometry, deskMaterial);
         desk.position.set(0, -0.92, 0);
-        desk.receiveShadow = true;
         scene.add(desk);
 
-        const carbonCanvas = document.createElement('canvas');
-        carbonCanvas.width = 512;
-        carbonCanvas.height = 512;
-        const carbonCtx = carbonCanvas.getContext('2d')!;
+        // Removed carbon fiber texture for performance
 
-        carbonCtx.fillStyle = '#383838';
-        carbonCtx.fillRect(0, 0, 512, 512);
-
-        carbonCtx.strokeStyle = 'rgba(60, 60, 60, 0.9)';
-        carbonCtx.lineWidth = 2;
-
-        const gridSize = 40;
-        for (let x = 0; x < 512; x += gridSize) {
-            for (let y = 0; y < 512; y += gridSize) {
-                carbonCtx.beginPath();
-                carbonCtx.moveTo(x, y);
-                carbonCtx.lineTo(x + gridSize, y + gridSize);
-                carbonCtx.stroke();
-
-                carbonCtx.beginPath();
-                carbonCtx.moveTo(x + gridSize, y);
-                carbonCtx.lineTo(x, y + gridSize);
-                carbonCtx.stroke();
-            }
-        }
-
-        carbonCtx.fillStyle = 'rgba(80, 80, 80, 0.4)';
-        for (let i = 0; i < 150; i++) {
-            const x = Math.random() * 512;
-            const y = Math.random() * 512;
-            const size = Math.random() * 5 + 2;
-            carbonCtx.beginPath();
-            carbonCtx.arc(x, y, size, 0, Math.PI * 2);
-            carbonCtx.fill();
-        }
-
-        const carbonTexture = new THREE.CanvasTexture(carbonCanvas);
-        deskMaterial.map = carbonTexture;
-        deskMaterial.normalScale = new THREE.Vector2(0.5, 0.5);
-
-        /* -------------------- Brighter Ambient Particles -------------------- */
-        const particleCount = 150;
+        /* -------------------- Optimized Particles -------------------- */
+        const particleCount = 50; // Reduced from 150
         const particlesGeometry = new THREE.BufferGeometry();
         const positions = new Float32Array(particleCount * 3);
-        const colors = new Float32Array(particleCount * 3);
 
         for (let i = 0; i < particleCount; i++) {
             positions[i * 3] = (Math.random() - 0.5) * 10;
             positions[i * 3 + 1] = Math.random() * 2;
             positions[i * 3 + 2] = (Math.random() - 0.5) * 10;
-
-            colors[i * 3] = 0.4 + Math.random() * 0.3;
-            colors[i * 3 + 1] = 0.6 + Math.random() * 0.4;
-            colors[i * 3 + 2] = 0.9 + Math.random() * 0.3;
         }
 
         particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
         const particlesMaterial = new THREE.PointsMaterial({
             size: 0.025,
-            vertexColors: true,
+            color: 0x88AAFF, // Single color instead of vertex colors
             transparent: true,
-            opacity: 0.8,
+            opacity: 0.6,
             blending: THREE.AdditiveBlending
         });
 
@@ -2125,12 +1829,19 @@ export default function InteractiveOldPC() {
         const SCROLL_TRIGGER_ID = 'my-trigger';
         scrollTriggerInstance = ScrollTrigger.getById(SCROLL_TRIGGER_ID)!;
 
-        /* -------------------- Mouse Interaction -------------------- */
+        /* -------------------- Optimized Mouse Interaction -------------------- */
         let mouseX = 0;
         let mouseY = 0;
         const onMouseMove = (e: MouseEvent) => {
-            mouseX = (e.clientX / window.innerWidth - 0.5) * 0.6;
-            mouseY = (e.clientY / window.innerHeight - 0.5) * 0.25;
+            // Throttle mouse movement updates
+            if (mouseMoveTimeout.current) {
+                clearTimeout(mouseMoveTimeout.current);
+            }
+
+            mouseMoveTimeout.current = setTimeout(() => {
+                mouseX = (e.clientX / window.innerWidth - 0.5) * 0.6;
+                mouseY = (e.clientY / window.innerHeight - 0.5) * 0.25;
+            }, 16); // ~60fps throttle
         };
         window.addEventListener("mousemove", onMouseMove);
 
@@ -2145,23 +1856,28 @@ export default function InteractiveOldPC() {
 
         initializeVideoPlayback(video);
 
-        /* -------------------- Animation Loop -------------------- */
+        /* -------------------- Optimized Animation Loop -------------------- */
         const clock = new THREE.Clock();
-        let animationId: number;
+        let lastTime = 0;
+        const frameRate = 60; // Target 60fps
+        const frameTime = 1000 / frameRate;
 
-        const animate = () => {
-            animationId = requestAnimationFrame(animate);
+        const animate = (currentTime: number) => {
+            animationFrameId.current = requestAnimationFrame(animate);
 
-            const delta = clock.getDelta();
+            // Frame rate limiting
+            const deltaTime = currentTime - lastTime;
+            if (deltaTime < frameTime) return;
+            lastTime = currentTime - (deltaTime % frameTime);
+
             const time = clock.getElapsedTime();
 
-            monitorMesh.rotation.y += (mouseX - monitorMesh.rotation.y) * 0.04;
-            monitorMesh.rotation.x += (-mouseY - monitorMesh.rotation.x) * 0.04;
+            // Smoother, less frequent updates
+            monitorMesh.rotation.y += (mouseX - monitorMesh.rotation.y) * 0.02; // Reduced from 0.04
+            monitorMesh.rotation.x += (-mouseY - monitorMesh.rotation.x) * 0.02; // Reduced from 0.04
 
-            monitorMesh.position.y = Math.sin(time * 0.4) * 0.003;
-            monitorMesh.rotation.z = Math.sin(time * 0.25) * 0.0015;
-
-            ledHaloMaterial.uniforms.time.value = time;
+            monitorMesh.position.y = Math.sin(time * 0.3) * 0.003; // Slower animation
+            monitorMesh.rotation.z = Math.sin(time * 0.2) * 0.0015; // Slower animation
 
             if (screenMaterialRef.current) {
                 screenMaterialRef.current.uniforms.time.value = time;
@@ -2169,18 +1885,19 @@ export default function InteractiveOldPC() {
             }
 
             if (glassMaterialRef.current) {
-                glassMaterialRef.current.opacity = 0.9 + Math.sin(time * 0.4) * 0.05;
+                glassMaterialRef.current.opacity = 0.9 + Math.sin(time * 0.3) * 0.05; // Slower animation
             }
 
-            scanlineTexture.offset.y += delta * 0.6;
-            quantumTexture.offset.x += delta * 0.05;
+            scanlineTexture.offset.y += 0.01; // Fixed animation instead of delta-based
+            quantumTexture.offset.x += 0.002; // Slower animation
 
-            particles.rotation.y += delta * 0.05;
+            particles.rotation.y += 0.01; // Fixed animation
 
             camera.lookAt(monitorMesh.position);
             renderer.render(scene, camera);
         };
-        animate();
+
+        animationFrameId.current = requestAnimationFrame(animate);
 
         /* -------------------- Cleanup -------------------- */
         return () => {
@@ -2196,7 +1913,14 @@ export default function InteractiveOldPC() {
                 videoRef.current.load();
             }
 
-            cancelAnimationFrame(animationId);
+            if (animationFrameId.current) {
+                cancelAnimationFrame(animationFrameId.current);
+            }
+
+            if (mouseMoveTimeout.current) {
+                clearTimeout(mouseMoveTimeout.current);
+            }
+
             renderer.dispose();
 
             if (scrollTriggerInstance) {
@@ -2208,7 +1932,7 @@ export default function InteractiveOldPC() {
                 container.removeChild(renderer.domElement);
             }
         };
-    }, [createVideoElement, initializeVideoPlayback, resumeVideoOnInteraction, handleScrollComplete]);
+    }, [createVideoElement, initializeVideoPlayback, resumeVideoOnInteraction, handleScrollComplete, showProjects]);
 
     return (
         <div className="relative w-full bg-gradient-to-b from-blue-950 via-gray-900 to-black">
